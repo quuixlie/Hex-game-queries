@@ -22,6 +22,7 @@ typedef struct GameStatus {
     int numberOfBluePawns;
     Player playerTurn;
     HexagonList emptyHexagons;
+    bool hexagonsHasBeenReduced;
 } GameStatus;
 
 
@@ -95,6 +96,7 @@ void initializeGameStatus(GameStatus &gameStatus) {
     gameStatus.numberOfBluePawns = 0;
     gameStatus.playerTurn = NONE;
     gameStatus.emptyHexagons.clear();
+    gameStatus.hexagonsHasBeenReduced = false;
 }
 
 void handleQuery(char *query, GameStatus &gameStatus) {
@@ -584,9 +586,11 @@ void handleCanPlayerWinInNMovesWithPerfectOpponentQuery(char *query, Player play
 
     int depth = calculateDepthOfCalculations(player, moves, gameStatus);
 
-    // Reducing empty hexagons for minimax is O(n^2) operation, so we do it only for depth > 2.
-    if (depth > 2)
+    // Reducing empty hexagons for minimax is O(n^3) operation, so we do it only for depth > 2 only once.
+    if (depth > 2 && !gameStatus.hexagonsHasBeenReduced) {
         reduceUselessEmptyHexagonsForMinimax(gameStatus, player);
+        gameStatus.hexagonsHasBeenReduced = true;
+    }
 
     if (gameStatus.emptyHexagons.getSize() < depth) { // No enough significant empty hexagons. Player can't win in n moves.
         printf("NO\n");
